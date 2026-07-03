@@ -76,10 +76,6 @@ cd forklift-logistics-iOS
 - **Base URL**: `https://api.forklift-logistics.ru`
 - **Endpoints**: `/compare`, `/health`
 
-## Лицензия
-
-MIT License
-
 ## Автор
 
-Arsen
+Убский Арсений
