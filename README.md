@@ -75,11 +75,3 @@ cd forklift-logistics-iOS
 Приложение взаимодействует с backend API:
 - **Base URL**: `https://api.forklift-logistics.ru`
 - **Endpoints**: `/compare`, `/health`
-
-## Лицензия
-
-MIT License
-
-## Автор
-
-Arsen
