@@ -5,7 +5,10 @@ struct CompareRequestDTO: Encodable {
     let orderShieldsQty: Int
     let shiftDurationHours: Double
     let initialInventory: InitialInventoryDTO
+    let handling: HandlingTimesDTO
+    let travelTimes: TravelTimesDTO
     let production: ProductionDTO
+    let objective: ObjectiveWeightsDTO
     let annealing: AnnealingDTO
 
     enum CodingKeys: String, CodingKey {
@@ -13,34 +16,106 @@ struct CompareRequestDTO: Encodable {
         case orderShieldsQty = "order_shields_qty"
         case shiftDurationHours = "shift_duration_hours"
         case initialInventory = "initial_inventory"
+        case handling
+        case travelTimes = "travel_times"
         case production
+        case objective
         case annealing
     }
 }
 
 struct InitialInventoryDTO: Encodable {
+    let sourceTubes: Int
+    let tubesAtC1: Int
     let shieldsWaitingC2: Int
     let shieldsWaitingC3: Int
     let finishedWaitingC4: Int
 
     enum CodingKeys: String, CodingKey {
+        case sourceTubes = "source_tubes"
+        case tubesAtC1 = "tubes_at_c1"
         case shieldsWaitingC2 = "shields_waiting_c2"
         case shieldsWaitingC3 = "shields_waiting_c3"
         case finishedWaitingC4 = "finished_waiting_c4"
     }
 }
 
-struct ProductionDTO: Encodable {
-    let c3PerHour: Double
+struct HandlingTimesDTO: Encodable {
+    let tubeLoadMin: Double
+    let tubeUnloadMin: Double
+    let shieldLoadMin: Double
+    let shieldUnloadMin: Double
+    let finishedLoadMin: Double
+    let finishedUnloadMin: Double
 
     enum CodingKeys: String, CodingKey {
+        case tubeLoadMin = "tube_load_min"
+        case tubeUnloadMin = "tube_unload_min"
+        case shieldLoadMin = "shield_load_min"
+        case shieldUnloadMin = "shield_unload_min"
+        case finishedLoadMin = "finished_load_min"
+        case finishedUnloadMin = "finished_unload_min"
+    }
+}
+
+struct TravelTimesDTO: Encodable {
+    let sC1: Double
+    let c1C2: Double
+    let c2C3: Double
+    let c3C4: Double
+    let c4P: Double
+
+    enum CodingKeys: String, CodingKey {
+        case sC1 = "s_c1"
+        case c1C2 = "c1_c2"
+        case c2C3 = "c2_c3"
+        case c3C4 = "c3_c4"
+        case c4P = "c4_p"
+    }
+}
+
+struct ProductionDTO: Encodable {
+    let c1PerHour: Double
+    let c2PerHour: Double
+    let c3PerHour: Double
+    let c4PerHour: Double
+
+    enum CodingKeys: String, CodingKey {
+        case c1PerHour = "c1_per_hour"
+        case c2PerHour = "c2_per_hour"
         case c3PerHour = "c3_per_hour"
+        case c4PerHour = "c4_per_hour"
+    }
+}
+
+struct ObjectiveWeightsDTO: Encodable {
+    let underproductionPenalty: Double
+    let makespanWeight: Double
+    let c3StarvationWeight: Double
+    let forkliftIdleWeight: Double
+
+    enum CodingKeys: String, CodingKey {
+        case underproductionPenalty = "underproduction_penalty"
+        case makespanWeight = "makespan_weight"
+        case c3StarvationWeight = "c3_starvation_weight"
+        case forkliftIdleWeight = "forklift_idle_weight"
     }
 }
 
 struct AnnealingDTO: Encodable {
     let iterations: Int
+    let initialTemperature: Double
+    let coolingRate: Double
+    let minTemperature: Double
     let seed: Int
+
+    enum CodingKeys: String, CodingKey {
+        case iterations
+        case initialTemperature = "initial_temperature"
+        case coolingRate = "cooling_rate"
+        case minTemperature = "min_temperature"
+        case seed
+    }
 }
 
 struct CompareResponseDTO: Decodable {

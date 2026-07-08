@@ -1,7 +1,6 @@
 import Foundation
 
 protocol HTTPClientProtocol {
-    func send<Response: Decodable>(_ endpoint: APIEndpoint) async throws -> Response
     func send<Request: Encodable, Response: Decodable>(_ endpoint: APIEndpoint, body: Request) async throws -> Response
 }
 
@@ -12,7 +11,7 @@ final class URLSessionHTTPClient: HTTPClientProtocol {
     private let decoder: JSONDecoder
 
     init(
-        baseURL: URL = URL(string: "https://api.forklift-logistics.ru")!,
+        baseURL: URL = URL(string: AppConstants.API.baseURL)!,
         session: URLSession = .shared,
         encoder: JSONEncoder = JSONEncoder(),
         decoder: JSONDecoder = JSONDecoder()
@@ -23,11 +22,6 @@ final class URLSessionHTTPClient: HTTPClientProtocol {
         self.decoder = decoder
     }
 
-    func send<Response: Decodable>(_ endpoint: APIEndpoint) async throws -> Response {
-        let empty = EmptyRequest()
-        return try await send(endpoint, body: empty)
-    }
-
     func send<Request: Encodable, Response: Decodable>(_ endpoint: APIEndpoint, body: Request) async throws -> Response {
         guard let url = URL(string: endpoint.path, relativeTo: baseURL) else {
             throw APIError.invalidURL
@@ -35,15 +29,13 @@ final class URLSessionHTTPClient: HTTPClientProtocol {
 
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method.rawValue
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue(AppConstants.API.jsonContentType, forHTTPHeaderField: AppConstants.API.acceptHeader)
+        request.setValue(AppConstants.API.jsonContentType, forHTTPHeaderField: AppConstants.API.contentTypeHeader)
 
-        if endpoint.method == .post {
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            do {
-                request.httpBody = try encoder.encode(body)
-            } catch {
-                throw APIError.encodingFailed
-            }
+        do {
+            request.httpBody = try encoder.encode(body)
+        } catch {
+            throw APIError.encodingFailed
         }
 
         do {
@@ -51,7 +43,7 @@ final class URLSessionHTTPClient: HTTPClientProtocol {
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw APIError.invalidResponse
             }
-            guard (200...299).contains(httpResponse.statusCode) else {
+            guard AppConstants.API.successStatusRange.contains(httpResponse.statusCode) else {
                 throw APIError.serverStatus(httpResponse.statusCode)
             }
             do {
@@ -66,5 +58,3 @@ final class URLSessionHTTPClient: HTTPClientProtocol {
         }
     }
 }
-
-private struct EmptyRequest: Encodable {}

@@ -1,34 +1,39 @@
 import SwiftUI
 
 struct TimelineView: View {
-    let strategy: StrategyResult
-    let shiftDurationHours: Double
+    let result: CompareResult
+    @Binding var selectedStrategy: StrategySelector
     @State private var selectedTrip: TripRecord?
 
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                SectionCard("Таймлайн погрузчиков", subtitle: strategy.title) {
-                    InfoTipView(
-                        title: "Как читать график",
-                        message: "Каждая строка — отдельный погрузчик. Цвет блока показывает маршрут. Чем шире блок, тем дольше рейс с учётом порожнего перегона, погрузки, движения и выгрузки."
-                    )
-                    TimelineChart(
-                        trips: strategy.tripLog,
-                        shiftDurationMin: shiftDurationHours * 60,
-                        selectedTrip: $selectedTrip
-                    )
-                    RouteLegendView()
-                }
+    private var strategy: StrategyResult {
+        selectedStrategy == .greedy ? result.greedy : result.annealing
+    }
 
-                if let selectedTrip {
-                    TripDetailCard(trip: selectedTrip)
-                }
+    var body: some View {
+        VStack(spacing: .zero) {
+            StickyControlsBar {
+                StrategySelectorCard(selectedStrategy: $selectedStrategy)
             }
-            .padding()
+
+            ScrollView {
+                VStack(spacing: AppConstants.Layout.screenSpacing) {
+                    SectionCard(AppConstants.Text.Timeline.cardTitle, subtitle: strategy.title) {
+                        InfoTipView(title: AppConstants.Text.Timeline.tipTitle, message: AppConstants.Text.Timeline.tipMessage)
+                        TimelineChart(trips: strategy.tripLog, shiftDurationMin: result.scenario.shiftDurationHours * AppConstants.Time.minutesInHour, selectedTrip: $selectedTrip)
+                        RouteLegendView()
+                    }
+
+                    if let selectedTrip {
+                        TripDetailCard(trip: selectedTrip)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.bottom)
+            }
         }
         .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle("Таймлайн")
+        .navigationTitle(AppConstants.Text.Common.timelineTitle)
+        .onChange(of: selectedStrategy) { _, _ in selectedTrip = nil }
     }
 }
 
@@ -42,41 +47,41 @@ private struct TimelineChart: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppConstants.Layout.mediumSpacing) {
             GeometryReader { proxy in
-                let labelWidth: CGFloat = 48
+                let labelWidth = AppConstants.Layout.timelineLabelWidth
                 let chartWidth = max(proxy.size.width - labelWidth, 1)
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: AppConstants.Layout.cardSpacing) {
                     ForEach(forklifts, id: \.self) { forklift in
-                        HStack(spacing: 8) {
+                        HStack(spacing: AppConstants.Layout.compactSpacing) {
                             Text(ForkliftPresentation.shortTitle(for: forklift))
                                 .font(.caption.weight(.semibold))
-                                .frame(width: labelWidth - 8, alignment: .leading)
+                                .frame(width: labelWidth - AppConstants.Layout.compactSpacing, alignment: .leading)
                             ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 8)
+                                RoundedRectangle(cornerRadius: AppConstants.Layout.compactSpacing)
                                     .fill(AppColors.background)
-                                    .frame(height: 36)
+                                    .frame(height: AppConstants.Layout.timelineRowHeight)
                                 ForEach(trips.filter { $0.forkliftID == forklift }) { trip in
                                     let x = CGFloat(max(0, trip.startTimeMin) / max(shiftDurationMin, 1)) * chartWidth
-                                    let width = max(CGFloat(trip.durationMinutes / max(shiftDurationMin, 1)) * chartWidth, 3)
-                                    RoundedRectangle(cornerRadius: 7)
+                                    let width = max(CGFloat(trip.durationMinutes / max(shiftDurationMin, 1)) * chartWidth, AppConstants.Layout.timelineMinBarWidth)
+                                    RoundedRectangle(cornerRadius: AppConstants.Layout.compactSpacing - 1)
                                         .fill(AppColors.route(trip.route))
-                                        .frame(width: width, height: 28)
+                                        .frame(width: width, height: AppConstants.Layout.timelineTripHeight)
                                         .offset(x: x)
                                         .onTapGesture { selectedTrip = trip }
                                 }
                             }
-                            .frame(width: chartWidth, height: 36)
+                            .frame(width: chartWidth, height: AppConstants.Layout.timelineRowHeight)
                         }
                     }
                 }
             }
-            .frame(height: CGFloat(max(forklifts.count, 1)) * 50)
+            .frame(height: CGFloat(max(forklifts.count, 1)) * AppConstants.Layout.timelineRowTotalHeight)
 
             HStack {
-                Text("Старт")
+                Text(AppConstants.Text.Timeline.start)
                 Spacer()
-                Text("Смена \(TimeFormatting.compactMinutes(shiftDurationMin))")
+                Text("\(AppConstants.Text.Timeline.shift) \(TimeFormatting.compactMinutes(shiftDurationMin))")
             }
             .font(.caption)
             .foregroundStyle(AppColors.muted)
@@ -85,15 +90,13 @@ private struct TimelineChart: View {
 }
 
 private struct RouteLegendView: View {
-    private let routes = ["S->C1", "C1->C2", "C2->C3", "C3->C4", "C4->P"]
-
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 92))], alignment: .leading, spacing: 8) {
-            ForEach(routes, id: \.self) { route in
-                HStack(spacing: 6) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: AppConstants.Layout.legendMinWidth))], alignment: .leading, spacing: AppConstants.Layout.compactSpacing) {
+            ForEach(AppConstants.Route.all, id: \.self) { route in
+                HStack(spacing: AppConstants.Layout.compactSpacing - 2) {
                     Circle()
                         .fill(AppColors.route(route))
-                        .frame(width: 10, height: 10)
+                        .frame(width: AppConstants.Layout.legendDotSize, height: AppConstants.Layout.legendDotSize)
                     Text(route)
                         .font(.caption)
                         .foregroundStyle(AppColors.muted)
@@ -107,14 +110,14 @@ private struct TripDetailCard: View {
     let trip: TripRecord
 
     var body: some View {
-        SectionCard("Рейс №\(trip.tripID)", subtitle: trip.route) {
-            VStack(alignment: .leading, spacing: 8) {
+        SectionCard("\(AppConstants.Text.Timeline.tripPrefix)\(trip.tripID)", subtitle: trip.route) {
+            VStack(alignment: .leading, spacing: AppConstants.Layout.compactSpacing) {
                 Text("\(trip.interval) · \(ForkliftPresentation.title(for: trip.forkliftID)) · \(trip.cargoType)")
                     .font(.headline)
-                Text("Количество: \(NumberFormatting.two(trip.qty)) шт, вес: \(NumberFormatting.two(trip.totalWeight)) кг")
-                Text("Погрузка: \(trip.loadInterval)")
-                Text("Движение: \(trip.travelInterval)")
-                Text("Выгрузка: \(trip.unloadInterval)")
+                Text("\(AppConstants.Text.Timeline.quantity): \(NumberFormatting.two(trip.qty)) \(AppConstants.Text.Common.piecesUnit), \(AppConstants.Text.Timeline.weight) \(NumberFormatting.two(trip.totalWeight)) \(AppConstants.Text.Common.kgUnit)")
+                Text("\(AppConstants.Text.Timeline.loading): \(trip.loadInterval)")
+                Text("\(AppConstants.Text.Timeline.travel): \(trip.travelInterval)")
+                Text("\(AppConstants.Text.Timeline.unloading): \(trip.unloadInterval)")
             }
             .font(.subheadline)
             .foregroundStyle(AppColors.ink)

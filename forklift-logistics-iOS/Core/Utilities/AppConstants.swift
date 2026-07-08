@@ -3,8 +3,9 @@ import SwiftUI
 enum AppConstants {
     enum API {
         static let baseURL = "https://api.forklift-logistics.ru"
-        static let comparePath = "/compare"
-        static let healthPath = "/health"
+        static let compareSummaryPath = "/compare/summary"
+        static let compareRoutesPath = "/compare/routes"
+        static let compareTripsPath = "/compare/trips"
         static let jsonContentType = "application/json"
         static let acceptHeader = "Accept"
         static let contentTypeHeader = "Content-Type"
@@ -55,8 +56,13 @@ enum AppConstants {
         static let legendDotSize: CGFloat = 10
         static let forkliftBadgeHorizontalPadding: CGFloat = 8
         static let forkliftBadgeVerticalPadding: CGFloat = 4
-        static let navigationIconSize: CGFloat = 32
         static let buttonCornerRadius: CGFloat = 18
+        static let strategyToggleHeight: CGFloat = 42
+        static let strategyToggleCornerRadius: CGFloat = 14
+        static let strategyTogglePadding: CGFloat = 3
+        static let forkliftToggleHeight: CGFloat = 38
+        static let forkliftToggleCornerRadius: CGFloat = 12
+        static let stickyControlsPadding: CGFloat = 10
     }
 
     enum Opacity {
@@ -92,11 +98,31 @@ enum AppConstants {
         static let durationStep = 0.5
         static let iterationsRange = 20...1500
         static let iterationsStep = 20
+        static let sourceTubesRange = 0...1000
+        static let c1TubesRange = 0...120
         static let inventoryRange = 0...80
+        static let productionRateRange = 2.0...20.0
         static let c3RateRange = 2.0...16.0
         static let c3RateStep = 0.5
+        static let handlingRange = 1.0...15.0
+        static let handlingStep = 0.5
+        static let travelRange = 0.2...10.0
+        static let travelStep = 0.1
+        static let underproductionPenaltyRange = 1000.0...100000.0
+        static let underproductionPenaltyStep = 500.0
+        static let makespanWeightRange = 0.0...100.0
+        static let makespanWeightStep = 0.5
+        static let c3StarvationWeightRange = 0.0...200.0
+        static let c3StarvationWeightStep = 1.0
+        static let forkliftIdleWeightRange = 0.0...100.0
+        static let forkliftIdleWeightStep = 0.5
+        static let initialTemperatureRange = 100.0...100000.0
+        static let initialTemperatureStep = 500.0
+        static let coolingRateRange = 0.90...0.999
+        static let coolingRateStep = 0.001
+        static let minTemperatureRange = 0.001...10.0
+        static let minTemperatureStep = 0.01
         static let seedRange = 0...1_000_000
-        static let fallbackShiftDurationHours = 11.0
     }
 
     enum SFIcon {
@@ -151,23 +177,29 @@ enum AppConstants {
             static let c3Idle = "Простой C3"
             static let objective = "Целевая функция"
             static let lowerIsBetter = "меньше — лучше"
-            static let strategyDetailsTitle = "Стратегия для детализации"
-            static let strategyDetailsSubtitle = "Выбранная стратегия используется во вкладках снизу"
-            static let strategyPicker = "Стратегия"
-            static let detailsTitle = "Детализация"
-            static let detailsMessage = "Используйте нижние вкладки: «Таймлайн», «Рейсы», «Маршруты» и «Справка». Они показывают выбранную выше стратегию."
+            static let comparisonTableTitle = "Подробная статистика"
+            static let comparisonTableSubtitle = "Сравнение двух стратегий по ключевым метрикам"
+            static let metricName = "Метрика"
             static let emptyTitle = "Пока нет расчёта"
             static let emptyMessage = "Настройте сценарий справа сверху на кнопке «Сценарий», затем нажмите «Запустить расчёт». После ответа backend появятся метрики, маршруты, журнал рейсов и нативный таймлайн."
             static let planPrefix = "План"
-            static let tripsPrefix = "Рейсов"
-            static let averageBatch = "средняя партия"
             static let forkliftUtilization = "загрузка погрузчиков"
+            static let shipped = "Отгружено щитов"
+            static let shortfall = "Недовыпуск"
+            static let makespan = "Общее время"
+            static let tripCount = "Количество рейсов"
+            static let avgLoadUnits = "Средняя партия"
+            static let avgLoadFactor = "Средняя загрузка рейса"
+            static let emptyTravel = "Порожние перегоны"
+            static let strategySelectorTitle = "Выбор стратегии"
         }
 
         enum Tabs {
             static let noTimelineMessage = "Сначала запустите расчёт на главном экране."
             static let noTripsMessage = "После расчёта здесь появится последовательность рейсов по времени."
             static let noRoutesMessage = "После расчёта здесь появится статистика по маршрутам."
+            static let loadingTripsMessage = "Загружаем журнал рейсов отдельным запросом. Так главный расчёт открывается быстрее."
+            static let loadingRoutesMessage = "Загружаем статистику маршрутов отдельным запросом."
         }
 
         enum Scenario {
@@ -182,15 +214,43 @@ enum AppConstants {
             static let dispatcherTipMessage = "Для демонстрации обычно достаточно менять план, начальные остатки перед C3/C4 и число итераций. Если C3 простаивает, итоговая отгрузка почти всегда падает."
             static let initialInventoryTitle = "Начальные остатки"
             static let initialInventorySubtitle = "Полуфабрикаты на старте смены"
+            static let sourceTubes = "Труб на складе"
+            static let tubesAtC1 = "Труб в C1"
             static let shieldsAtC2 = "Щитов в C2"
             static let shieldsAtC3 = "Щитов в C3"
             static let finishedAtC4 = "Готовых в C4"
+            static let handlingTitle = "Времена операций"
+            static let handlingSubtitle = "Погрузка и выгрузка, мин"
+            static let tubeLoad = "Погрузка труб"
+            static let tubeUnload = "Выгрузка труб"
+            static let shieldLoad = "Погрузка щитов"
+            static let shieldUnload = "Выгрузка щитов"
+            static let finishedLoad = "Погрузка готовой продукции"
+            static let finishedUnload = "Выгрузка готовой продукции"
+            static let travelTitle = "Время перемещения"
+            static let travelSubtitle = "Минуты между зонами"
+            static let productionTitle = "Производительность цехов"
+            static let productionSubtitle = "Щитов в час"
             static let bottleneckTitle = "Узкое место"
             static let bottleneckSubtitle = "Производительность C3"
+            static let objectiveTitle = "Веса целевой функции"
+            static let objectiveSubtitle = "Как приложение сравнивает решения"
+            static let underproductionPenalty = "Штраф за недовыпуск"
+            static let makespanWeight = "Вес общего времени"
+            static let c3StarvationWeight = "Вес простоя C3"
+            static let forkliftIdleWeight = "Вес простоя погрузчиков"
+            static let annealingTitle = "Параметры отжига"
+            static let annealingSubtitle = "Настройки поиска расписания"
+            static let initialTemperature = "Начальная температура"
+            static let coolingRate = "Коэффициент охлаждения"
+            static let minTemperature = "Минимальная температура"
             static let reproducibilityTitle = "Воспроизводимость"
             static let reproducibilitySubtitle = "Seed фиксирует случайные перестановки отжига"
             static let seed = "Seed"
+            static let c1 = "C1"
+            static let c2 = "C2"
             static let c3 = "C3"
+            static let c4 = "C4"
             static let shieldsPerHour = "щитов/час"
         }
 
@@ -231,13 +291,13 @@ enum AppConstants {
 
         enum Help {
             static let articles: [HelpArticleContent] = [
-                HelpArticleContent(title: "Что делает приложение", message: "Отправляет параметры смены на backend, получает расчёт двух стратегий и показывает отгрузку, простой C3 и расписание погрузчиков.", icon: SFIcon.shipping),
-                HelpArticleContent(title: "Жадная стратегия", message: "Выбирает ближайший доступный рейс с учётом приоритетов потока. Это быстрый базовый вариант для сравнения.", icon: SFIcon.greedy),
-                HelpArticleContent(title: "Имитация отжига", message: "Меняет порядок рейсов, прогоняет варианты через симуляцию и сохраняет расписание с меньшим значением целевой функции.", icon: SFIcon.annealing),
-                HelpArticleContent(title: "Целевая функция", message: "Главный вклад даёт недовыпуск. Дополнительно учитываются общее время, простой C3 и штрафуемый простой погрузчиков.", icon: SFIcon.objective),
-                HelpArticleContent(title: "Простой C3", message: "C3 — узкое место. Если он ждёт входной поток, итоговая отгрузка обычно снижается.", icon: SFIcon.warning),
-                HelpArticleContent(title: "Таймлайн", message: "Цветные блоки показывают занятость погрузчиков. По ним видно распределение маршрутов во времени.", icon: SFIcon.timeline),
-                HelpArticleContent(title: "Что менять диспетчеру", message: "Начинайте с плана, стартовых остатков перед C3/C4 и числа итераций. Если план недостижим, будет большой недовыпуск.", icon: SFIcon.sliders)
+                HelpArticleContent(title: "Что делает приложение", message: "Отправляет параметры смены на backend, получает расчёт двух стратегий и показывает отгрузку, простой C3 и расписание погрузчиков.", icon: AppConstants.SFIcon.shipping),
+                HelpArticleContent(title: "Жадная стратегия", message: "Выбирает ближайший доступный рейс с учётом приоритетов потока. Это быстрый базовый вариант для сравнения.", icon: AppConstants.SFIcon.greedy),
+                HelpArticleContent(title: "Имитация отжига", message: "Меняет порядок рейсов, прогоняет варианты через симуляцию и сохраняет расписание с меньшим значением целевой функции.", icon: AppConstants.SFIcon.annealing),
+                HelpArticleContent(title: "Целевая функция", message: "Главный вклад даёт недовыпуск. Дополнительно учитываются общее время, простой C3 и штрафуемый простой погрузчиков.", icon: AppConstants.SFIcon.objective),
+                HelpArticleContent(title: "Простой C3", message: "C3 — узкое место. Если он ждёт входной поток, итоговая отгрузка обычно снижается.", icon: AppConstants.SFIcon.warning),
+                HelpArticleContent(title: "Таймлайн", message: "Цветные блоки показывают занятость погрузчиков. По ним видно распределение маршрутов во времени.", icon: AppConstants.SFIcon.timeline),
+                HelpArticleContent(title: "Что менять диспетчеру", message: "Начинайте с плана, стартовых остатков перед C3/C4 и числа итераций. Если план недостижим, будет большой недовыпуск.", icon: AppConstants.SFIcon.sliders)
             ]
         }
 

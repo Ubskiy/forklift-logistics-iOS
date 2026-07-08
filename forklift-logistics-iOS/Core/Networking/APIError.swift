@@ -11,15 +11,15 @@ enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Некорректный адрес сервера."
+            return AppConstants.Text.APIError.invalidURL
         case .invalidResponse:
-            return "Сервер вернул некорректный ответ."
+            return AppConstants.Text.APIError.invalidResponse
         case .serverStatus(let code):
-            return "Ошибка сервера: HTTP \(code)."
+            return "\(AppConstants.Text.APIError.serverStatusPrefix) \(code)."
         case .decodingFailed:
-            return "Не удалось прочитать ответ сервера."
+            return AppConstants.Text.APIError.decodingFailed
         case .encodingFailed:
-            return "Не удалось подготовить запрос."
+            return AppConstants.Text.APIError.encodingFailed
         case .transport(let error):
             return error.localizedDescription
         }

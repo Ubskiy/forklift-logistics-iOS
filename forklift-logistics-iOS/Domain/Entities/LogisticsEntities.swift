@@ -4,12 +4,41 @@ struct ScenarioSettings: Equatable {
     var scenario: ScenarioKind = .day
     var orderShieldsQty: Int = 88
     var shiftDurationHours: Double = 11
-    var iterations: Int = 120
-    var seed: Int = 42
-    var c3RatePerHour: Double = 8
+
+    var sourceTubes: Int = 352
+    var initialTubesAtC1: Int = 8
     var initialC2: Int = 2
     var initialC3: Int = 0
     var initialC4: Int = 0
+
+    var tubeLoadMin: Double = 5
+    var tubeUnloadMin: Double = 4
+    var shieldLoadMin: Double = 5
+    var shieldUnloadMin: Double = 4
+    var finishedLoadMin: Double = 5
+    var finishedUnloadMin: Double = 4
+
+    var travelSC1: Double = 1
+    var travelC1C2: Double = 1
+    var travelC2C3: Double = 1
+    var travelC3C4: Double = 1
+    var travelC4P: Double = 1
+
+    var c1RatePerHour: Double = 8
+    var c2RatePerHour: Double = 12
+    var c3RatePerHour: Double = 8
+    var c4RatePerHour: Double = 12
+
+    var underproductionPenalty: Double = 15000
+    var makespanWeight: Double = 1
+    var c3StarvationWeight: Double = 25
+    var forkliftIdleWeight: Double = 4
+
+    var iterations: Int = 120
+    var initialTemperature: Double = 20000
+    var coolingRate: Double = 0.985
+    var minTemperature: Double = 0.1
+    var seed: Int = 42
 
     var requestID: String { scenario.rawValue }
 }
@@ -22,8 +51,8 @@ enum ScenarioKind: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .day: return "Дневная смена"
-        case .night: return "Ночная смена"
+        case .day: return AppConstants.Text.Scenario.dayShift
+        case .night: return AppConstants.Text.Scenario.nightShift
         }
     }
 }
@@ -50,6 +79,16 @@ struct StrategyResult: Equatable, Identifiable {
     let metrics: StrategyMetrics
     let routeStats: [RouteStat]
     let tripLog: [TripRecord]
+
+    func mergingDetails(from other: StrategyResult, includeRoutes: Bool, includeTrips: Bool) -> StrategyResult {
+        StrategyResult(
+            strategyName: strategyName,
+            title: title,
+            metrics: metrics,
+            routeStats: includeRoutes ? other.routeStats : routeStats,
+            tripLog: includeTrips ? other.tripLog : tripLog
+        )
+    }
 }
 
 struct StrategyMetrics: Equatable {
