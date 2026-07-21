@@ -29,6 +29,7 @@ final class URLSessionHTTPClient: HTTPClientProtocol {
 
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method.rawValue
+        request.timeoutInterval = AppConstants.API.requestTimeout
         request.setValue(AppConstants.API.jsonContentType, forHTTPHeaderField: AppConstants.API.acceptHeader)
         request.setValue(AppConstants.API.jsonContentType, forHTTPHeaderField: AppConstants.API.contentTypeHeader)
 

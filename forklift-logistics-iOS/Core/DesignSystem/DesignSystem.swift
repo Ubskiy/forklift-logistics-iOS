@@ -21,6 +21,44 @@ enum AppColors {
     }
 }
 
+private struct AppScreenNavigationStyle: ViewModifier {
+    let title: String
+
+    func body(content: Content) -> some View {
+        content
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.automatic, for: .navigationBar)
+    }
+}
+
+extension View {
+    /// Keeps every root screen on the same large-to-inline navigation-title path.
+    /// The system navigation bar supplies the compact title's material blur while scrolling.
+    func appScreen(title: String) -> some View {
+        modifier(AppScreenNavigationStyle(title: title))
+    }
+}
+
+struct SkeletonBlock: View {
+    let height: CGFloat
+    var cornerRadius: CGFloat = AppConstants.Layout.compactSpacing
+    @State private var isDimmed = false
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(AppColors.muted.opacity(isDimmed ? 0.08 : 0.18))
+            .frame(maxWidth: .infinity)
+            .frame(height: height)
+            .animation(
+                .easeInOut(duration: 0.85).repeatForever(autoreverses: true),
+                value: isDimmed
+            )
+            .onAppear { isDimmed = true }
+            .accessibilityHidden(true)
+    }
+}
+
 struct SectionCard<Content: View>: View {
     let title: String
     let subtitle: String?

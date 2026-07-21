@@ -34,12 +34,9 @@ struct MainTabView: View {
     @ViewBuilder
     private var timelineContent: some View {
         if let result = viewModel.result {
-            if result.greedy.tripLog.isEmpty || result.annealing.tripLog.isEmpty {
-                LoadingDetailsView(title: AppConstants.Text.Common.timelineTitle, message: AppConstants.Text.Tabs.loadingTripsMessage, isLoading: viewModel.isLoadingTrips)
-                    .task { await viewModel.loadTripsIfNeeded() }
-            } else {
-                TimelineView(result: result, selectedStrategy: $viewModel.selectedStrategy)
-            }
+            TimelineView(result: result, selectedStrategy: $viewModel.selectedStrategy)
+        } else if viewModel.isLoading {
+            LoadingDetailsView(title: AppConstants.Text.Common.timelineTitle)
         } else {
             NoResultView(title: AppConstants.Text.Common.timelineTitle, message: AppConstants.Text.Tabs.noTimelineMessage)
         }
@@ -48,12 +45,9 @@ struct MainTabView: View {
     @ViewBuilder
     private var tripsContent: some View {
         if let result = viewModel.result {
-            if result.greedy.tripLog.isEmpty || result.annealing.tripLog.isEmpty {
-                LoadingDetailsView(title: AppConstants.Text.Common.tripsTitle, message: AppConstants.Text.Tabs.loadingTripsMessage, isLoading: viewModel.isLoadingTrips)
-                    .task { await viewModel.loadTripsIfNeeded() }
-            } else {
-                TripsView(result: result, selectedStrategy: $viewModel.selectedStrategy)
-            }
+            TripsView(result: result, selectedStrategy: $viewModel.selectedStrategy)
+        } else if viewModel.isLoading {
+            LoadingDetailsView(title: AppConstants.Text.Common.tripsTitle)
         } else {
             NoResultView(title: AppConstants.Text.Common.tripsTitle, message: AppConstants.Text.Tabs.noTripsMessage)
         }
@@ -62,12 +56,9 @@ struct MainTabView: View {
     @ViewBuilder
     private var routesContent: some View {
         if let result = viewModel.result {
-            if result.greedy.routeStats.isEmpty || result.annealing.routeStats.isEmpty {
-                LoadingDetailsView(title: AppConstants.Text.Common.routesTitle, message: AppConstants.Text.Tabs.loadingRoutesMessage, isLoading: viewModel.isLoadingRoutes)
-                    .task { await viewModel.loadRoutesIfNeeded() }
-            } else {
-                RoutesView(result: result, selectedStrategy: $viewModel.selectedStrategy)
-            }
+            RoutesView(result: result, selectedStrategy: $viewModel.selectedStrategy)
+        } else if viewModel.isLoading {
+            LoadingDetailsView(title: AppConstants.Text.Common.routesTitle)
         } else {
             NoResultView(title: AppConstants.Text.Common.routesTitle, message: AppConstants.Text.Tabs.noRoutesMessage)
         }
@@ -79,8 +70,7 @@ struct NoResultView: View {
     let message: String
 
     var body: some View {
-        ZStack {
-            AppColors.background.ignoresSafeArea()
+        ScrollView {
             SectionCard(title) {
                 VStack(alignment: .leading, spacing: AppConstants.Layout.mediumSpacing) {
                     Image(systemName: AppConstants.SFIcon.tray)
@@ -93,31 +83,37 @@ struct NoResultView: View {
             }
             .padding()
         }
-        .navigationTitle(title)
+        .background(AppColors.background.ignoresSafeArea())
+        .appScreen(title: title)
     }
 }
 
 struct LoadingDetailsView: View {
     let title: String
-    let message: String
-    let isLoading: Bool
 
     var body: some View {
-        ZStack {
-            AppColors.background.ignoresSafeArea()
+        ScrollView {
             SectionCard(title) {
                 VStack(alignment: .leading, spacing: AppConstants.Layout.mediumSpacing) {
-                    if isLoading {
+                    HStack(spacing: AppConstants.Layout.mediumSpacing) {
                         ProgressView()
+                            .tint(AppColors.accent)
+                        Text(AppConstants.Text.Tabs.calculationMessage)
+                            .foregroundStyle(AppColors.muted)
                     }
-                    Text(message)
-                        .foregroundStyle(AppColors.muted)
+
+                    ForEach(0..<5, id: \.self) { _ in
+                        SkeletonBlock(height: 58, cornerRadius: AppConstants.Layout.metricCornerRadius)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(AppConstants.Text.Tabs.calculationMessage)
             }
             .padding()
         }
-        .navigationTitle(title)
+        .background(AppColors.background.ignoresSafeArea())
+        .appScreen(title: title)
     }
 }
 
@@ -125,7 +121,7 @@ struct StrategySelectorCard: View {
     @Binding var selectedStrategy: StrategySelector
 
     var body: some View {
-        StickyControlsCard {
+        SelectionControlsCard {
             VStack(alignment: .leading, spacing: AppConstants.Layout.compactSpacing) {
                 Text(AppConstants.Text.Dashboard.strategySelectorTitle)
                     .font(.caption.weight(.semibold))
@@ -136,7 +132,7 @@ struct StrategySelectorCard: View {
     }
 }
 
-struct StickyControlsCard<Content: View>: View {
+struct SelectionControlsCard<Content: View>: View {
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -145,28 +141,15 @@ struct StickyControlsCard<Content: View>: View {
 
     var body: some View {
         content
-            .padding(AppConstants.Layout.stickyControlsPadding)
+            .padding(AppConstants.Layout.cardPadding)
             .background(AppColors.card)
-            .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.metricCornerRadius, style: .continuous))
-            .shadow(color: .black.opacity(AppConstants.Layout.shadowOpacity), radius: 8, x: .zero, y: 4)
-    }
-}
-
-struct StickyControlsBar<Content: View>: View {
-    let content: Content
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(spacing: AppConstants.Layout.compactSpacing) {
-            content
-        }
-        .padding(.horizontal, AppConstants.Layout.screenSpacing)
-        .padding(.top, AppConstants.Layout.compactSpacing)
-        .padding(.bottom, AppConstants.Layout.compactSpacing)
-        .background(AppColors.background)
+            .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.cardCornerRadius, style: .continuous))
+            .shadow(
+                color: .black.opacity(AppConstants.Layout.shadowOpacity),
+                radius: AppConstants.Layout.shadowRadius,
+                x: .zero,
+                y: AppConstants.Layout.shadowYOffset
+            )
     }
 }
 

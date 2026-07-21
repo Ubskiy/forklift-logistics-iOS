@@ -13,7 +13,7 @@ struct HelpView: View {
             .padding()
         }
         .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle(AppConstants.Text.Common.helpTitle)
+        .appScreen(title: AppConstants.Text.Common.helpTitle)
     }
 }
 

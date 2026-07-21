@@ -9,24 +9,19 @@ struct RoutesView: View {
     }
 
     var body: some View {
-        VStack(spacing: .zero) {
-            StickyControlsBar {
+        ScrollView {
+            LazyVStack(spacing: AppConstants.Layout.screenSpacing) {
                 StrategySelectorCard(selectedStrategy: $selectedStrategy)
-            }
 
-            ScrollView {
-                VStack(spacing: AppConstants.Layout.cardSpacing) {
-                    InfoTipView(title: AppConstants.Text.Routes.tipTitle, message: AppConstants.Text.Routes.tipMessage)
-                    ForEach(strategy.routeStats) { route in
-                        routeCard(route)
-                    }
+                InfoTipView(title: AppConstants.Text.Routes.tipTitle, message: AppConstants.Text.Routes.tipMessage)
+                ForEach(strategy.routeStats) { route in
+                    routeCard(route)
                 }
-                .padding(.horizontal)
-                .padding(.bottom)
             }
+            .padding()
         }
         .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle(AppConstants.Text.Common.routesTitle)
+        .appScreen(title: AppConstants.Text.Common.routesTitle)
     }
 
     private func routeCard(_ route: RouteStat) -> some View {

@@ -14,7 +14,9 @@ struct DashboardView: View {
                         InfoTipView(title: AppConstants.Text.Dashboard.errorTitle, message: errorMessage, isCollapsible: false)
                     }
 
-                    if let result = viewModel.result {
+                    if viewModel.isLoading {
+                        calculationSkeleton
+                    } else if let result = viewModel.result {
                         summary(result)
                         comparisonTable(result)
                     } else {
@@ -24,8 +26,7 @@ struct DashboardView: View {
                 .padding()
             }
             .background(AppColors.background.ignoresSafeArea())
-            .navigationTitle(AppConstants.Text.Dashboard.navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
+            .appScreen(title: AppConstants.Text.Dashboard.navigationTitle)
             .toolbar {
                 NavigationLink(AppConstants.Text.Common.scenario) {
                     ScenarioSetupView(settings: $viewModel.settings)
@@ -61,6 +62,40 @@ struct DashboardView: View {
             }
             .disabled(viewModel.isLoading)
         }
+    }
+
+    private var calculationSkeleton: some View {
+        VStack(spacing: AppConstants.Layout.screenSpacing) {
+            SectionCard(
+                AppConstants.Text.Dashboard.loadingButton,
+                subtitle: AppConstants.Text.Tabs.calculationMessage
+            ) {
+                HStack(spacing: AppConstants.Layout.mediumSpacing) {
+                    ProgressView()
+                        .tint(AppColors.accent)
+                    Text(AppConstants.Text.Dashboard.cardSubtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(AppColors.muted)
+                }
+
+                LazyVGrid(
+                    columns: [GridItem(.flexible()), GridItem(.flexible())],
+                    spacing: AppConstants.Layout.mediumSpacing
+                ) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        SkeletonBlock(height: 92, cornerRadius: AppConstants.Layout.metricCornerRadius)
+                    }
+                }
+            }
+
+            SectionCard(AppConstants.Text.Dashboard.comparisonTableTitle) {
+                ForEach(0..<5, id: \.self) { _ in
+                    SkeletonBlock(height: 54, cornerRadius: AppConstants.Layout.metricCornerRadius)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(AppConstants.Text.Tabs.calculationMessage)
     }
 
     private func summary(_ result: CompareResult) -> some View {

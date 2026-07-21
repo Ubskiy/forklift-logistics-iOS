@@ -10,29 +10,24 @@ struct TimelineView: View {
     }
 
     var body: some View {
-        VStack(spacing: .zero) {
-            StickyControlsBar {
+        ScrollView {
+            VStack(spacing: AppConstants.Layout.screenSpacing) {
                 StrategySelectorCard(selectedStrategy: $selectedStrategy)
-            }
 
-            ScrollView {
-                VStack(spacing: AppConstants.Layout.screenSpacing) {
-                    SectionCard(AppConstants.Text.Timeline.cardTitle, subtitle: strategy.title) {
-                        InfoTipView(title: AppConstants.Text.Timeline.tipTitle, message: AppConstants.Text.Timeline.tipMessage)
-                        TimelineChart(trips: strategy.tripLog, shiftDurationMin: result.scenario.shiftDurationHours * AppConstants.Time.minutesInHour, selectedTrip: $selectedTrip)
-                        RouteLegendView()
-                    }
-
-                    if let selectedTrip {
-                        TripDetailCard(trip: selectedTrip)
-                    }
+                SectionCard(AppConstants.Text.Timeline.cardTitle, subtitle: strategy.title) {
+                    InfoTipView(title: AppConstants.Text.Timeline.tipTitle, message: AppConstants.Text.Timeline.tipMessage)
+                    TimelineChart(trips: strategy.tripLog, shiftDurationMin: result.scenario.shiftDurationHours * AppConstants.Time.minutesInHour, selectedTrip: $selectedTrip)
+                    RouteLegendView()
                 }
-                .padding(.horizontal)
-                .padding(.bottom)
+
+                if let selectedTrip {
+                    TripDetailCard(trip: selectedTrip)
+                }
             }
+            .padding()
         }
         .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle(AppConstants.Text.Common.timelineTitle)
+        .appScreen(title: AppConstants.Text.Common.timelineTitle)
         .onChange(of: selectedStrategy) { _, _ in selectedTrip = nil }
     }
 }

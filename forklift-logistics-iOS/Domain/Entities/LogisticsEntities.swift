@@ -79,16 +79,6 @@ struct StrategyResult: Equatable, Identifiable {
     let metrics: StrategyMetrics
     let routeStats: [RouteStat]
     let tripLog: [TripRecord]
-
-    func mergingDetails(from other: StrategyResult, includeRoutes: Bool, includeTrips: Bool) -> StrategyResult {
-        StrategyResult(
-            strategyName: strategyName,
-            title: title,
-            metrics: metrics,
-            routeStats: includeRoutes ? other.routeStats : routeStats,
-            tripLog: includeTrips ? other.tripLog : tripLog
-        )
-    }
 }
 
 struct StrategyMetrics: Equatable {

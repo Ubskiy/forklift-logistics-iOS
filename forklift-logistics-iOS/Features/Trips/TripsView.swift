@@ -23,28 +23,32 @@ struct TripsView: View {
     }
 
     var body: some View {
-        VStack(spacing: .zero) {
-            StickyControlsBar {
-                StickyControlsCard {
-                    VStack(alignment: .leading, spacing: AppConstants.Layout.compactSpacing) {
-                        StrategyPickerInline(selectedStrategy: $selectedStrategy)
-                        ForkliftFilterToggle(selectedForklift: $selectedForklift, filterTitles: filterTitles)
+        ScrollView {
+            LazyVStack(spacing: .zero, pinnedViews: [.sectionHeaders]) {
+                Section {
+                    SectionCard("\(AppConstants.Text.Trips.section): \(strategy.title)") {
+                        ForEach(filteredTrips) { trip in
+                            tripRow(trip)
+                            if trip.id != filteredTrips.last?.id {
+                                Divider()
+                                    .overlay(AppColors.background)
+                            }
+                        }
                     }
+                    .padding(.horizontal)
+                    .padding(.top, AppConstants.Layout.screenSpacing)
+                    .padding(.bottom)
+                } header: {
+                    TripsStickyFilters(
+                        selectedStrategy: $selectedStrategy,
+                        selectedForklift: $selectedForklift,
+                        filterTitles: filterTitles
+                    )
                 }
             }
-
-            List {
-                Section("\(AppConstants.Text.Trips.section): \(strategy.title)") {
-                    ForEach(filteredTrips) { trip in
-                        tripRow(trip)
-                    }
-                }
-            }
-            .scrollContentBackground(.hidden)
         }
         .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle(AppConstants.Text.Common.tripsTitle)
-        .navigationBarTitleDisplayMode(.inline)
+        .appScreen(title: AppConstants.Text.Common.tripsTitle)
         .onChange(of: selectedStrategy) { _, _ in keepAvailableForkliftSelection() }
         .onChange(of: forkliftIDs) { _, _ in keepAvailableForkliftSelection() }
     }
@@ -83,86 +87,110 @@ struct TripsView: View {
     }
 }
 
-struct ForkliftFilterToggle: View {
+private struct TripsStickyFilters: View {
+    @Binding var selectedStrategy: StrategySelector
     @Binding var selectedForklift: String
     let filterTitles: [String]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppConstants.Layout.tinySpacing) {
-            Text(AppConstants.Text.Trips.picker)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(AppColors.muted)
-
-            HStack(spacing: AppConstants.Layout.strategyTogglePadding) {
-                ForEach(filterTitles, id: \.self) { title in
-                    forkliftButton(title)
+        HStack(spacing: AppConstants.Layout.compactSpacing) {
+            FilterMenuChip(
+                title: AppConstants.Text.Trips.strategyPicker,
+                value: selectedStrategy.title
+            ) {
+                ForEach(StrategySelector.allCases) { strategy in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            selectedStrategy = strategy
+                        }
+                    } label: {
+                        if selectedStrategy == strategy {
+                            Label(strategy.title, systemImage: "checkmark")
+                        } else {
+                            Text(strategy.title)
+                        }
+                    }
                 }
             }
-            .padding(AppConstants.Layout.strategyTogglePadding)
-            .background(AppColors.accent.opacity(AppConstants.Opacity.accentBackground))
-            .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.forkliftToggleCornerRadius + AppConstants.Layout.strategyTogglePadding, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppConstants.Layout.forkliftToggleCornerRadius + AppConstants.Layout.strategyTogglePadding, style: .continuous)
-                    .stroke(AppColors.accent.opacity(0.20), lineWidth: 1)
-            )
-        }
-    }
 
-    private func forkliftButton(_ title: String) -> some View {
-        let isSelected = selectedForklift == title
-        let color = color(for: title)
-
-        return Button {
-            withAnimation(.spring(response: 0.24, dampingFraction: 0.86)) {
-                selectedForklift = title
+            FilterMenuChip(
+                title: AppConstants.Text.Trips.picker,
+                value: selectedForklift
+            ) {
+                ForEach(filterTitles, id: \.self) { title in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            selectedForklift = title
+                        }
+                    } label: {
+                        if selectedForklift == title {
+                            Label(title, systemImage: "checkmark")
+                        } else {
+                            Text(title)
+                        }
+                    }
+                }
             }
-        } label: {
-            Text(title)
-                .font(.caption2.weight(.bold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-                .foregroundStyle(isSelected ? .white : color)
-                .frame(maxWidth: .infinity, minHeight: AppConstants.Layout.forkliftToggleHeight)
-                .background(
-                    RoundedRectangle(cornerRadius: AppConstants.Layout.forkliftToggleCornerRadius, style: .continuous)
-                        .fill(isSelected ? color : AppColors.card)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppConstants.Layout.forkliftToggleCornerRadius, style: .continuous)
-                        .stroke(color.opacity(isSelected ? 0 : 0.40), lineWidth: 1.1)
-                )
-                .shadow(
-                    color: isSelected ? color.opacity(0.18) : .clear,
-                    radius: isSelected ? 5 : 0,
-                    x: .zero,
-                    y: isSelected ? 2 : 0
-                )
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    private func color(for title: String) -> Color {
-        guard title != AppConstants.Forklift.allFilterTitle else { return AppColors.accent }
-        if title == ForkliftPresentation.title(for: AppConstants.Forklift.firstID) {
-            return ForkliftPresentation.color(for: AppConstants.Forklift.firstID)
+        .padding(.horizontal)
+        .padding(.vertical, AppConstants.Layout.compactSpacing)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .bottom) {
+            Divider()
+                .overlay(AppColors.accent.opacity(0.12))
         }
-        if title == ForkliftPresentation.title(for: AppConstants.Forklift.secondID) {
-            return ForkliftPresentation.color(for: AppConstants.Forklift.secondID)
-        }
-        return AppColors.accent
+        .shadow(color: .black.opacity(0.04), radius: 8, x: .zero, y: 4)
+        .zIndex(1)
     }
 }
 
-struct StrategyPickerInline: View {
-    @Binding var selectedStrategy: StrategySelector
+private struct FilterMenuChip<MenuContent: View>: View {
+    let title: String
+    let value: String
+    let menuContent: MenuContent
+
+    init(
+        title: String,
+        value: String,
+        @ViewBuilder menuContent: () -> MenuContent
+    ) {
+        self.title = title
+        self.value = value
+        self.menuContent = menuContent()
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppConstants.Layout.tinySpacing) {
-            Text(AppConstants.Text.Dashboard.strategySelectorTitle)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(AppColors.muted)
-            StrategyToggle(selectedStrategy: $selectedStrategy)
+        Menu {
+            menuContent
+        } label: {
+            VStack(alignment: .leading, spacing: AppConstants.Layout.tinySpacing) {
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(AppColors.muted)
+
+                HStack(spacing: AppConstants.Layout.tinySpacing) {
+                    Text(value)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppColors.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Spacer(minLength: .zero)
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(AppColors.accent)
+                }
+            }
+            .padding(.horizontal, AppConstants.Layout.mediumSpacing)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+            .background(AppColors.card.opacity(0.94))
+            .clipShape(RoundedRectangle(cornerRadius: AppConstants.Layout.tipCornerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: AppConstants.Layout.tipCornerRadius, style: .continuous)
+                    .stroke(AppColors.accent.opacity(0.18), lineWidth: 1)
+            }
         }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .accessibilityLabel("\(title): \(value)")
     }
 }

@@ -3,13 +3,12 @@ import SwiftUI
 enum AppConstants {
     enum API {
         static let baseURL = "https://api.forklift-logistics.ru"
-        static let compareSummaryPath = "/compare/summary"
-        static let compareRoutesPath = "/compare/routes"
-        static let compareTripsPath = "/compare/trips"
+        static let comparePath = "/compare"
         static let jsonContentType = "application/json"
         static let acceptHeader = "Accept"
         static let contentTypeHeader = "Content-Type"
         static let successStatusRange = 200...299
+        static let requestTimeout: TimeInterval = 300
     }
 
     enum NumberFormat {
@@ -60,9 +59,9 @@ enum AppConstants {
         static let strategyToggleHeight: CGFloat = 42
         static let strategyToggleCornerRadius: CGFloat = 14
         static let strategyTogglePadding: CGFloat = 3
-        static let forkliftToggleHeight: CGFloat = 38
-        static let forkliftToggleCornerRadius: CGFloat = 12
-        static let stickyControlsPadding: CGFloat = 10
+        static let numericFieldWidth: CGFloat = 120
+        static let numericControlButtonWidth: CGFloat = 32
+        static let numericInputRowHeight: CGFloat = 42
     }
 
     enum Opacity {
@@ -198,8 +197,7 @@ enum AppConstants {
             static let noTimelineMessage = "Сначала запустите расчёт на главном экране."
             static let noTripsMessage = "После расчёта здесь появится последовательность рейсов по времени."
             static let noRoutesMessage = "После расчёта здесь появится статистика по маршрутам."
-            static let loadingTripsMessage = "Загружаем журнал рейсов отдельным запросом. Так главный расчёт открывается быстрее."
-            static let loadingRoutesMessage = "Загружаем статистику маршрутов отдельным запросом."
+            static let calculationMessage = "Расчёт выполняется. Метрики, маршруты и рейсы появятся одновременно."
         }
 
         enum Scenario {
@@ -247,6 +245,16 @@ enum AppConstants {
             static let reproducibilityTitle = "Воспроизводимость"
             static let reproducibilitySubtitle = "Seed фиксирует случайные перестановки отжига"
             static let seed = "Seed"
+            static let reset = "Сбросить"
+            static let resetConfirmationTitle = "Сбросить сценарий?"
+            static let resetConfirmationMessage = "Все параметры вернутся к значениям по умолчанию."
+            static let cancel = "Отмена"
+            static let done = "Готово"
+            static let previousField = "Предыдущее поле"
+            static let nextField = "Следующее поле"
+            static let enterNumber = "Введите число"
+            static let allowedRange = "Допустимо:"
+            static let numberPlaceholder = "0"
             static let c1 = "C1"
             static let c2 = "C2"
             static let c3 = "C3"
@@ -269,19 +277,20 @@ enum AppConstants {
         }
 
         enum Trips {
+            static let strategyPicker = "Стратегия"
             static let picker = "Погрузчик"
             static let section = "Рейсы"
             static let weight = "Вес"
             static let loading = "Погрузка"
-            static let travel = "движение"
-            static let unloading = "выгрузка"
+            static let travel = "Движение"
+            static let unloading = "Выгрузка"
         }
 
         enum Routes {
             static let tipTitle = "Что показывает статистика маршрутов"
             static let tipMessage = "Здесь видно, какие плечи цепочки занимают больше рейсов и где перевозки идут мелкими партиями."
             static let trips = "Рейсов"
-            static let avgBatch = "Ср. партия"
+            static let avgBatch = "Средняя партия"
             static let shields = "Щитов"
             static let tubes = "Труб"
             static let weight = "Вес"
@@ -291,11 +300,11 @@ enum AppConstants {
 
         enum Help {
             static let articles: [HelpArticleContent] = [
-                HelpArticleContent(title: "Что делает приложение", message: "Отправляет параметры смены на backend, получает расчёт двух стратегий и показывает отгрузку, простой C3 и расписание погрузчиков.", icon: AppConstants.SFIcon.shipping),
-                HelpArticleContent(title: "Жадная стратегия", message: "Выбирает ближайший доступный рейс с учётом приоритетов потока. Это быстрый базовый вариант для сравнения.", icon: AppConstants.SFIcon.greedy),
-                HelpArticleContent(title: "Имитация отжига", message: "Меняет порядок рейсов, прогоняет варианты через симуляцию и сохраняет расписание с меньшим значением целевой функции.", icon: AppConstants.SFIcon.annealing),
-                HelpArticleContent(title: "Целевая функция", message: "Главный вклад даёт недовыпуск. Дополнительно учитываются общее время, простой C3 и штрафуемый простой погрузчиков.", icon: AppConstants.SFIcon.objective),
-                HelpArticleContent(title: "Простой C3", message: "C3 — узкое место. Если он ждёт входной поток, итоговая отгрузка обычно снижается.", icon: AppConstants.SFIcon.warning),
+                HelpArticleContent(title: "Что делает приложение", message: "Находит 2 разных расписания работы погрузчиков - на жадной стратегии оптимизации и на основе алгоритма имитации отжига", icon: AppConstants.SFIcon.shipping),
+                HelpArticleContent(title: "Жадная стратегия", message: "Выбирает ближайший доступный рейс с учётом заданных приоритетов. Это быстрый базовый вариант.", icon: AppConstants.SFIcon.greedy),
+                HelpArticleContent(title: "Имитация отжига", message: "Улучшает базовое расписание, составленное жадной стратегией.", icon: AppConstants.SFIcon.annealing),
+                HelpArticleContent(title: "Целевая функция", message: "Главный вклад даёт недовыпуск щитов. Дополнительно учитываются общее время, простой C3 и штрафуемый простой погрузчиков.", icon: AppConstants.SFIcon.objective),
+                HelpArticleContent(title: "Простой C3", message: "C3 — узкое место. Если он простаивает, итоговая отгрузка обычно снижается.", icon: AppConstants.SFIcon.warning),
                 HelpArticleContent(title: "Таймлайн", message: "Цветные блоки показывают занятость погрузчиков. По ним видно распределение маршрутов во времени.", icon: AppConstants.SFIcon.timeline),
                 HelpArticleContent(title: "Что менять диспетчеру", message: "Начинайте с плана, стартовых остатков перед C3/C4 и числа итераций. Если план недостижим, будет большой недовыпуск.", icon: AppConstants.SFIcon.sliders)
             ]
